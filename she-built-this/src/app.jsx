@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import SafetySection from "./SafetySection";
+import IndianWomenSection from "./Indianwomensection";
+import HerStoryWall from "./Herstorywall";
+import Quiz from "./quiz";
 
-// ── Data ──────────────────────────────────────────────────────────────────────
 const women = [
   {
     id: 1, year: "1843", name: "Ada Lovelace", title: "World's First Programmer",
@@ -54,7 +56,6 @@ const women = [
   },
 ];
 
-// ── Particle Background ───────────────────────────────────────────────────────
 function ParticleBackground() {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -92,7 +93,6 @@ function ParticleBackground() {
   return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }} />;
 }
 
-// ── Timeline Card ─────────────────────────────────────────────────────────────
 function TimelineNode({ woman, index, isSelected, onClick, isVisible }) {
   const isLeft = index % 2 === 0;
   return (
@@ -112,7 +112,6 @@ function TimelineNode({ woman, index, isSelected, onClick, isVisible }) {
   );
 }
 
-// ── Detail Modal ──────────────────────────────────────────────────────────────
 function DetailPanel({ woman, onClose }) {
   if (!woman) return null;
   return (
@@ -146,7 +145,14 @@ function DetailPanel({ woman, onClose }) {
   );
 }
 
-// ── Main App ──────────────────────────────────────────────────────────────────
+const TABS = [
+  { id: "timeline", label: "🏛️ Global Pioneers" },
+  { id: "india",    label: "🇮🇳 Made in India" },
+  { id: "stories",  label: "🌸 Her Story Wall" },
+  { id: "quiz",     label: "🧠 Quiz" },
+  { id: "safety",   label: "🛡️ Safety" },
+];
+
 export default function App() {
   const [selected, setSelected] = useState(null);
   const [visible, setVisible] = useState([]);
@@ -164,7 +170,7 @@ export default function App() {
       <div className="content">
 
         <header className="hero">
-          <div className="hero-tag">International Women's Day 2025</div>
+          <div className="hero-tag">International Women's Day 2026</div>
           <h1 className="hero-title">
             She <span className="hero-built">Built</span> This
           </h1>
@@ -173,16 +179,17 @@ export default function App() {
           </p>
         </header>
 
-        {/* TAB NAVIGATION */}
-        <nav className="tab-nav">
-          <button className={`tab-btn ${activeTab === "timeline" ? "active" : ""}`}
-            onClick={() => setActiveTab("timeline")}>
-            🏛️ Pioneers Timeline
-          </button>
-          <button className={`tab-btn ${activeTab === "safety" ? "active" : ""}`}
-            onClick={() => setActiveTab("safety")}>
-            🛡️ Safety & Awareness
-          </button>
+        {/* 5-TAB NAVIGATION */}
+        <nav className="tab-nav tab-nav-5">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              className={`tab-btn ${activeTab === t.id ? "active" : ""} ${t.id === "india" && activeTab === t.id ? "india-tab" : ""}`}
+              onClick={() => setActiveTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
         </nav>
 
         {activeTab === "timeline" && (
@@ -196,17 +203,22 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === "safety" && <SafetySection />}
+        {activeTab === "india"   && <IndianWomenSection />}
+        {activeTab === "stories" && <HerStoryWall />}
+        {activeTab === "quiz"    && <Quiz />}
+        {activeTab === "safety"  && <SafetySection />}
 
         <footer className="footer">
           <div className="footer-text">
-            Built by <strong>Preesha Vashisth</strong> · Women's Day 2025 · React + Node.js
+            Built by <strong>Preesha Vashisth</strong> · Women's Day 2026 · React + Node.js
           </div>
           <div className="footer-sub">Full-Stack Developer · VIT Chennai · Sarvm.AI</div>
         </footer>
       </div>
 
-      <DetailPanel woman={selected} onClose={() => setSelected(null)} />
+      {activeTab === "timeline" && (
+        <DetailPanel woman={selected} onClose={() => setSelected(null)} />
+      )}
     </div>
   );
 }
