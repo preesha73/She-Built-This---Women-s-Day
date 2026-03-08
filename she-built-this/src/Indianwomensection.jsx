@@ -155,7 +155,7 @@ function WomanCard({ woman, onClick, isSelected }) {
         </div>
       </div>
       <div className="iw-name">{woman.name}</div>
-      <div className="iw-title">{woman.title}</div>
+      <div className="iw-card-title">{woman.title}</div>
       <div className="iw-year" style={{ color: woman.accent }}>{woman.year}</div>
       {isSelected && <div className="iw-active-bar" style={{ background: woman.color }} />}
     </div>
