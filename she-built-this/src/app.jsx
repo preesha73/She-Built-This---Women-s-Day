@@ -56,50 +56,322 @@ const women = [
   },
 ];
 
-function ParticleBackground() {
+// ─── Feminine Background ─────────────────────────────────────────────────────
+function FeminineBackground() {
   const canvasRef = useRef(null);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     let animId;
-    const particles = [];
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
     resize();
     window.addEventListener("resize", resize);
-    for (let i = 0; i < 60; i++) {
-      particles.push({
-        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-        r: Math.random() * 2 + 0.5,
-        dx: (Math.random() - 0.5) * 0.4, dy: (Math.random() - 0.5) * 0.4,
-        alpha: Math.random() * 0.5 + 0.1,
-        color: ["#F48FB1", "#CE93D8", "#90CAF9", "#FFCC80"][Math.floor(Math.random() * 4)],
-      });
-    }
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, "0");
+
+    // Twinkling stars
+    const stars = Array.from({ length: 200 }, () => ({
+      x: Math.random(), y: Math.random(),
+      r: Math.random() * 1.3 + 0.2,
+      base: Math.random() * 0.55 + 0.1,
+      phase: Math.random() * Math.PI * 2,
+      speed: Math.random() * 0.025 + 0.006,
+      color: ["#ffffff","#ffe0f0","#e8d6ff","#d6f0ff","#ffd6e8"][Math.floor(Math.random() * 5)],
+      sparkle: Math.random() > 0.85,
+    }));
+
+    // Drifting sakura petals
+    const PETAL_COLORS = ["#f9a8d4","#fbcfe8","#fce7f3","#e9d5ff","#ddd6fe","#c4b5fd","#fda4af"];
+    const petals = Array.from({ length: 32 }, () => ({
+      x: Math.random(), y: Math.random(),
+      size: Math.random() * 8 + 4,
+      dx: (Math.random() - 0.5) * 0.0003,
+      dy: Math.random() * 0.00022 + 0.00007,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.014,
+      sway: Math.random() * 0.00035 + 0.0001,
+      swayPhase: Math.random() * Math.PI * 2,
+      color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+      alpha: Math.random() * 0.4 + 0.15,
+    }));
+
+    // Soft bokeh orbs
+    const orbs = Array.from({ length: 16 }, () => ({
+      x: Math.random(), y: Math.random(),
+      r: Math.random() * 70 + 25,
+      alpha: Math.random() * 0.045 + 0.01,
+      phase: Math.random() * Math.PI * 2,
+      speed: Math.random() * 0.006 + 0.002,
+      color: ["#f9a8d4","#c4b5fd","#93c5fd","#6ee7b7","#fde68a","#fda4af"][Math.floor(Math.random() * 6)],
+    }));
+
+    // Shooting stars
+    const shooters = [];
+    const spawnShooter = () => {
+      shooters.push({ x: Math.random() * 0.55, y: Math.random() * 0.35, len: 100 + Math.random() * 70, alpha: 1 });
+      setTimeout(spawnShooter, 3500 + Math.random() * 4500);
+    };
+    setTimeout(spawnShooter, 1800);
+
+    // 4-point sparkle star
+    const drawSparkle = (cx, cy, r, alpha, color) => {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      ctx.translate(cx, cy);
+      for (let a = 0; a < 4; a++) {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, r * 2.5, r * 0.45, (a * Math.PI) / 2, 0, Math.PI * 2);
         ctx.fill();
-        p.x += p.dx; p.y += p.dy;
-        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+      }
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+
+    // Petal shape
+    const drawPetal = (p, W, H) => {
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x * W, p.y * H);
+      ctx.rotate(p.rotation);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, p.size, p.size * 0.42, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.2)";
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(-p.size * 0.65, 0);
+      ctx.lineTo(p.size * 0.65, 0);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    let t = 0;
+    const draw = (ts) => {
+      t = ts * 0.001;
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      // Bokeh
+      orbs.forEach((o) => {
+        const pulse = o.alpha + Math.sin(t * o.speed * 60 + o.phase) * 0.012;
+        ctx.globalAlpha = Math.max(0, pulse);
+        const g = ctx.createRadialGradient(o.x * W, o.y * H, 0, o.x * W, o.y * H, o.r);
+        g.addColorStop(0, o.color);
+        g.addColorStop(1, "transparent");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(o.x * W, o.y * H, o.r, 0, Math.PI * 2);
+        ctx.fill();
       });
+      ctx.globalAlpha = 1;
+
+      // Stars
+      stars.forEach((s) => {
+        const alpha = s.base + Math.sin(t * s.speed * 60 + s.phase) * 0.28;
+        if (alpha <= 0) return;
+        if (s.sparkle) {
+          drawSparkle(s.x * W, s.y * H, s.r * 1.5, alpha, s.color);
+        } else {
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = s.color;
+          ctx.beginPath();
+          ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      });
+
+      // Shooting stars
+      for (let i = shooters.length - 1; i >= 0; i--) {
+        const s = shooters[i];
+        const g = ctx.createLinearGradient(s.x * W, s.y * H, s.x * W + s.len, s.y * H + s.len * 0.28);
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.5, `rgba(249,168,212,${s.alpha * 0.55})`);
+        g.addColorStop(1, `rgba(255,255,255,${s.alpha * 0.85})`);
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(s.x * W, s.y * H);
+        ctx.lineTo(s.x * W + s.len, s.y * H + s.len * 0.28);
+        ctx.stroke();
+        s.x += 3.5 / W; s.y += 1.0 / H; s.alpha *= 0.962;
+        if (s.alpha < 0.02) shooters.splice(i, 1);
+      }
+
+      // Petals
+      petals.forEach((p) => {
+        p.x += p.dx + Math.sin(t * 0.38 + p.swayPhase) * p.sway;
+        p.y += p.dy;
+        p.rotation += p.rotSpeed;
+        if (p.y > 1.06) { p.y = -0.06; p.x = Math.random(); }
+        if (p.x < -0.06) p.x = 1.06;
+        if (p.x > 1.06) p.x = -0.06;
+        drawPetal(p, W, H);
+      });
+
+      ctx.globalAlpha = 1;
       animId = requestAnimationFrame(draw);
     };
-    draw();
-    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", resize); };
+
+    animId = requestAnimationFrame(draw);
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
   }, []);
+
   return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }} />;
 }
 
+// ─── Aurora Blobs ────────────────────────────────────────────────────────────
+function AuroraBlobs() {
+  return (
+    <>
+      <div className="aurora aurora-1" />
+      <div className="aurora aurora-2" />
+      <div className="aurora aurora-3" />
+    </>
+  );
+}
+
+// ─── Mouse Glow ──────────────────────────────────────────────────────────────
+function MouseGlow() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const move = (e) => {
+      if (ref.current) {
+        ref.current.style.left = e.clientX + "px";
+        ref.current.style.top = e.clientY + "px";
+      }
+    };
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
+  }, []);
+  return <div ref={ref} className="mouse-glow" />;
+}
+
+// ─── Scroll Progress ─────────────────────────────────────────────────────────
+function ScrollProgress() {
+  const barRef = useRef(null);
+  useEffect(() => {
+    const onScroll = () => {
+      const p = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+      if (barRef.current) barRef.current.style.transform = `scaleX(${p})`;
+    };
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return <div ref={barRef} className="scroll-progress" />;
+}
+
+// ─── Card Sparkle Hook ───────────────────────────────────────────────────────
+function useCardSparkle(cardRef) {
+  const canvasRef = useRef(null);
+  const sparksRef = useRef([]);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    const card = cardRef.current;
+    const cnv = canvasRef.current;
+    if (!card || !cnv) return;
+    const cc = cnv.getContext("2d");
+
+    const resize = () => { cnv.width = card.offsetWidth; cnv.height = card.offsetHeight; };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const SPARK_COLORS = ["#F48FB1","#CE93D8","#90CAF9","#FFCC80","#ffffff","#fbcfe8","#c4b5fd","#fda4af"];
+
+    const addSparks = (x, y) => {
+      for (let i = 0; i < 6; i++) {
+        sparksRef.current.push({
+          x, y,
+          vx: (Math.random() - 0.5) * 3.2,
+          vy: (Math.random() - 0.5) * 3.2 - 1,
+          r: Math.random() * 2.8 + 0.8,
+          alpha: 1,
+          color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)],
+        });
+      }
+    };
+
+    const animate = () => {
+      cc.clearRect(0, 0, cnv.width, cnv.height);
+      sparksRef.current = sparksRef.current.filter((s) => s.alpha > 0.03);
+      sparksRef.current.forEach((s) => {
+        cc.globalAlpha = s.alpha;
+        cc.fillStyle = s.color;
+        cc.beginPath();
+        cc.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        cc.fill();
+        cc.save();
+        cc.translate(s.x, s.y);
+        cc.rotate(s.alpha * 4);
+        cc.globalAlpha = s.alpha * 0.5;
+        for (let a = 0; a < 4; a++) {
+          cc.beginPath();
+          cc.ellipse(0, 0, s.r * 3, s.r * 0.4, (a * Math.PI) / 2, 0, Math.PI * 2);
+          cc.fill();
+        }
+        cc.restore();
+        s.x += s.vx; s.y += s.vy;
+        s.vy += 0.055;
+        s.alpha *= 0.91;
+      });
+      cc.globalAlpha = 1;
+      if (sparksRef.current.length > 0) rafRef.current = requestAnimationFrame(animate);
+      else rafRef.current = null;
+    };
+
+    const onMove = (e) => {
+      const rect = card.getBoundingClientRect();
+      addSparks(e.clientX - rect.left, e.clientY - rect.top);
+      if (!rafRef.current) animate();
+    };
+    const onLeave = () => { sparksRef.current = []; };
+
+    card.addEventListener("mousemove", onMove);
+    card.addEventListener("mouseleave", onLeave);
+    return () => {
+      card.removeEventListener("mousemove", onMove);
+      card.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("resize", resize);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [cardRef]);
+
+  return canvasRef;
+}
+
+// ─── Timeline Node ────────────────────────────────────────────────────────────
 function TimelineNode({ woman, index, isSelected, onClick, isVisible }) {
   const isLeft = index % 2 === 0;
+  const cardRef = useRef(null);
+  const sparkCanvasRef = useCardSparkle(cardRef);
+
   return (
-    <div className={`timeline-item ${isVisible ? "visible" : ""} ${isLeft ? "left" : "right"}`}
-      style={{ "--delay": `${index * 0.12}s`, "--accent": woman.color }}>
-      <div className="timeline-card" onClick={() => onClick(woman)}
-        style={{ borderColor: isSelected ? woman.color : "transparent" }}>
+    <div
+      className={`timeline-item ${isVisible ? "visible" : ""} ${isLeft ? "left" : "right"}`}
+      style={{ "--delay": `${index * 0.12}s`, "--accent": woman.color }}
+    >
+      <div
+        ref={cardRef}
+        className="timeline-card"
+        onClick={() => onClick(woman)}
+        style={{ borderColor: isSelected ? woman.color : "transparent" }}
+      >
+        <canvas
+          ref={sparkCanvasRef}
+          style={{ position: "absolute", inset: 0, pointerEvents: "none", borderRadius: "16px", zIndex: 3 }}
+        />
         <div className="card-year" style={{ color: woman.accent }}>{woman.year}</div>
         <div className="card-icon">{woman.icon}</div>
         <div className="card-name">{woman.name}</div>
@@ -112,6 +384,7 @@ function TimelineNode({ woman, index, isSelected, onClick, isVisible }) {
   );
 }
 
+// ─── Detail Panel ─────────────────────────────────────────────────────────────
 function DetailPanel({ woman, onClose }) {
   if (!woman) return null;
   return (
@@ -166,20 +439,25 @@ export default function App() {
 
   return (
     <div className="app">
-      <ParticleBackground />
-      <div className="content">
+      <ScrollProgress />
+      <FeminineBackground />
+      <AuroraBlobs />
+      <MouseGlow />
 
+      <div className="content">
         <header className="hero">
-          <div className="hero-tag">International Women's Day 2026</div>
+          <div className="hero-tag">
+            <span className="hero-tag-shimmer" />
+            ✦ International Women's Day 2026 ✦
+          </div>
           <h1 className="hero-title">
-            She <span className="hero-built">Built</span> This
+            She <span className="hero-built" data-text="Built">Built</span> This
           </h1>
           <p className="hero-sub">
             The women who coded, engineered, and invented the world you live in.
           </p>
         </header>
 
-        {/* 5-TAB NAVIGATION */}
         <nav className="tab-nav tab-nav-5">
           {TABS.map((t) => (
             <button
