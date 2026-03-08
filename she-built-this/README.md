@@ -1,4 +1,4 @@
-# 💻 She Built This — Women's Day 2025
+# 💻 She Built This — Women's Day 2026
 
 > An interactive web experience celebrating the women who coded, engineered, and invented the world we live in — and giving every woman the safety resources she deserves.
 
